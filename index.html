@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>クソハムちゃんの政経150問特訓でちゅ！</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #fff9e6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            touch-action: manipulation;
+        }
+        .game-container {
+            background-color: #ffffff;
+            width: 480px; 
+            height: 600px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            overflow: hidden;
+            border: 5px solid #8b5a2b;
+            position: relative;
+        }
+
+        .screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: none; 
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+            transition: opacity 0.3s;
+        }
+        .active-screen { display: flex !important; opacity: 1; z-index: 10; }
+
+        .title-text {
+            font-size: 28px; font-weight: 900; color: #e67e22;
+            margin-bottom: 20px; text-shadow: 2px 2px 0 #fff; line-height: 1.2; letter-spacing: 1px;
+        }
+        
+        .title-img { width: 300px; height: 250px; object-fit: contain; margin-bottom: 20px; }
+        
+        button.start-btn, button.back-btn {
+            color: #ffffff; border: none; padding: 12px 30px; border-radius: 30px;
+            font-size: 20px; font-weight: bold; cursor: pointer;
+            box-shadow: 0 4px 0 #d35400; transition: transform 0.1s;
+            background-color: #f39c12; border: 3px solid #8b5a2b;
+        }
+        button.start-btn:active, button.back-btn:active { transform: translateY(4px); box-shadow: 0 0 0 #d35400; }
+
+        .menu-area {
+            width: 90%;
+            height: 70%;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 15px 10px; 
+        }
+        .menu-btn {
+            background-color: #fceabb;
+            color: #5c3a21; 
+            border: 3px solid #f39c12;
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 900;
+            cursor: pointer;
+            text-align: left;
+            position: relative; 
+            overflow: visible;  
+            transition: background 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .menu-btn:hover { background-color: #f7d794; }
+        
+        .menu-btn.cleared {
+            background-color: #81ecec;
+            border-color: #00cec9;
+            color: #2d3436;
+        }
+
+        .clear-mark-img {
+            position: absolute;
+            right: -15px; 
+            top: -15px;   
+            width: 65px;   
+            height: 65px;
+            object-fit: contain;
+            transform: rotate(15deg); 
+            z-index: 5;
+            pointer-events: none; 
+            filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.2)); 
+        }
+
+        .character-area {
+            background-color: #fff8dc;
+            width: 100%;
+            height: 300px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            position: relative;
+            overflow: hidden;
+            border-bottom: 3px solid #8b5a2b;
+        }
+        .character-img {
+            width: 320px; height: 320px; object-fit: contain;
+            transition: transform 0.2s; margin-bottom: -30px; z-index: 1;
+        }
+        
+        .speech-bubble {
+            position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.7); border-radius: 15px;
+            padding: 10px 15px; width: 85%; min-height: 60px; 
+            border: 3px solid #8b5a2b; font-weight: 900; color: #5c3a21; 
+            z-index: 10; font-size: 16px; line-height: 1.3; text-align: left;
+            box-shadow: 2px 3px 0 rgba(139, 90, 43, 0.2); white-space: pre-wrap; 
+            text-shadow: 1px 1px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff;
+        }
+
+        .quiz-area { flex: 1; padding: 15px; display: flex; flex-direction: column; justify-content: center; }
+        .options-grid { display: grid; gap: 8px; }
+        
+        button.option-btn {
+            background-color: #fceabb; color: #5c3a21; border: 3px solid #f39c12;
+            padding: 12px; border-radius: 10px; font-size: 15px; font-weight: 900;
+            cursor: pointer; transition: background 0.2s; -webkit-appearance: none; 
+            box-shadow: 0 3px 0 #f39c12; text-align: left;
+        }
+        button.option-btn:active { transform: translateY(3px); box-shadow: 0 0 0 #f39c12; }
+        button.option-btn:disabled { background-color: #e0e0e0; border-color: #999; color: #666; box-shadow: none; cursor: not-allowed; }
+
+        /* ■アニメーション画面（コーヒーブレイク） */
+        .intermission-bg {
+            background-color: #000; /* 真っ黒なレトロ背景 */
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .intermission-text {
+            color: #ff9900;
+            font-size: 24px;
+            font-weight: 900;
+            margin-bottom: 50px;
+            font-family: monospace; 
+            text-shadow: 2px 2px 0 #fff;
+        }
+        .pacman-track {
+            position: absolute;
+            width: 100%;
+            height: 120px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* アニメーション用キャラクターの基本スタイル */
+        .coffee-char {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            top: 10px;
+            object-fit: contain;
+        }
+
+        /* ★ コーヒーブレイク1：追いかけっこアニメ */
+        
+        /* 逃げるオレンジ（ runner.png ） */
+        .coffee1-runner {
+            right: -120px; /* 右外からスタート */
+            /* 走るアニメ + Uターンアニメを組み合わせるでちゅ */
+            animation: coffee1-run 4s linear forwards, coffee1-runner-u-turn 4s linear forwards;
+        }
+        
+        /* 追いかけるハム（ chaser.png ） */
+        .coffee1-chaser {
+            right: 0px; /* オレンジの後ろからスタート */
+            /* 走るアニメ + Uターンアニメを組み合わせるでちゅ */
+            animation: coffee1-run 4s linear forwards, coffee1-chaser-u-turn 4s linear forwards;
+        }
+
+        /* 右から左へ走り抜け、Uターンして戻る共通の動き */
+        @keyframes coffee1-run {
+            0%   { right: -120px; }
+            45%  { right: 100%; } /* 左端まで逃げる */
+            55%  { right: 100%; } /* 左端でちょっと待つ */
+            100% { right: -120px; } /* 右端まで追い返す */
+        }
+
+        /* 逃げるオレンジのUターン（反転）処理 */
+        @keyframes coffee1-runner-u-turn {
+            0%   { transform: scaleX(1); } /* 左向き */
+            45%  { transform: scaleX(1); }
+            /* Uターンして、さらに巨大化（パワーアップ）させるでちゅ！ */
+            50%  { transform: scaleX(-1) scale(1.5); } /* 右向きに反転 + 巨大化 */
+            100% { transform: scaleX(-1) scale(1.5); }
+        }
+
+        /* 追いかけるハムのUターン（反転）処理 */
+        @keyframes coffee1-chaser-u-turn {
+            0%   { transform: scaleX(1); } /* 正面向き */
+            45%  { transform: scaleX(1); }
+            50%  { transform: scaleX(-1); } /* 右向きに反転（逃げる） */
+            100% { transform: scaleX(-1); }
+        }
+
+        .reward-img { width: 350px; height: 350px; object-fit: contain; margin-bottom: 20px; }
+
+        .correct-anim { animation: jump 0.5s; }
+        .wrong-anim { animation: shake 0.5s; }
+        @keyframes jump { 0% { transform: translateY(0); } 50% { transform: translateY(-20px); } 100% { transform: translateY(0); } }
+        @keyframes shake { 0% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } 100% { transform: translateX(0); } }
+
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    
+    <div id="mute-btn" onclick="toggleMute()">🔊</div>
+
+    <!-- 1. タイトル画面 -->
+    <div id="title-screen" class="screen active-screen">
+        <h1 class="title-text">クソハムちゃんの<br>政経150問特訓でちゅ！</h1>
+        <img src="images/title.png" alt="タイトル画像" class="title-img">
+        <div class="btn-area">
+            <button class="start-btn" onclick="playClickSound(); showScreen('menu-screen')">メニューへいくでちゅ！</button>
+        </div>
+    </div>
+
+    <!-- 2. メニュー画面 -->
+    <div id="menu-screen" class="screen">
+        <h1 class="title-text">特訓項目を選ぶでちゅ！</h1>
+        <div id="menu-area" class="menu-area"></div>
+        <div class="btn-area">
+            <button class="back-btn" onclick="playClickSound(); showScreen('title-screen')" style="margin-top: 10px;">タイトルへもどる</button>
+        </div>
+    </div>
+
+    <!-- 3. 問題画面 -->
+    <div id="quiz-screen" class="screen" style="padding: 0;">
+        <div class="character-area">
+            <img id="char-img" src="" alt="キャラクター画像" class="character-img">
+            <div id="char-voice" class="speech-bubble"></div>
+        </div>
+        <div class="quiz-area">
+            <div id="options" class="options-grid"></div>
+        </div>
+    </div>
+
+    <!-- 4. アニメーション画面（コーヒーブレイク） ★画像を2枚に増やしたよ！ -->
+    <div id="intermission-screen" class="screen" style="padding: 0;">
+        <div class="intermission-bg">
+            <div class="intermission-text">～ ちょっと休憩でちゅ ～</div>
+            <div class="pacman-track">
+                <!-- ここを走るでちゅ！ -->
+                <!-- 逃げるオレンジ（後ろに配置） -->
+                <img id="runner-img" src="images/coffee/runner.png" alt="逃げるキャラ" class="coffee-char coffee1-runner">
+                <!-- 追いかけるハム（手前に配置） -->
+                <img id="chaser-img" src="images/coffee/chaser.png" alt="追いかけるハム" class="coffee-char coffee1-chaser">
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. リザルト画面 -->
+    <div id="result-screen" class="screen">
+        <h1 class="title-text">項目クリア！えらいでちゅ！</h1>
+        <div id="result-message" class="title-text" style="font-size: 20px;"></div>
+        <img id="reward-img" src="" alt="ご褒美画像" class="reward-img">
+        <div class="btn-area">
+            <button class="back-btn" onclick="playClickSound(); backToMenu()">メニューにもどるでちゅ！</button>
+        </div>
+    </div>
+
+</div>
+
+<script src="questions.js"></script>
+
+<script>
+    window.onload = function() {
+        showScreen('title-screen');
+    };
+
+    window.onerror = function(msg) {
+        console.error(msg);
+        const bubble = document.getElementById("char-voice");
+        if(bubble) bubble.innerText = "エラーでちゅ！\nquestions.jsがないかもしれないでちゅ！";
+    };
+
+    let currentQuestions = [];
+    let currentQIndex = 0;
+    let score = 0;
+    let wrongAnswerCount = 0; 
+    let currentSectionKey = ""; 
+    let currentNormalImgNum = 1; 
+    let hasMissedCurrent = false;
+
+    let audioCtx;
+    let isMuted = false;
+
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    }
+
+    function playOscillator(freq, duration, type, volume) {
+        if (!audioCtx || isMuted) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.value = freq;
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        const now = audioCtx.currentTime;
+        osc.start(now);
+        osc.stop(now + duration);
+        gain.gain.setValueAtTime(volume, now);
+        gain.gain.linearRampToValueAtTime(0, now + duration);
+    }
+
+    function toggleMute() {
+        isMuted = !isMuted;
+        const btn = document.getElementById("mute-btn");
+        btn.innerText = isMuted ? "🔇" : "🔊";
+    }
+
+    function playTypeSound() { playOscillator(800 + Math.random() * 200, 0.05, 'square', 0.02); }
+    function playGoodSound() { playOscillator(660, 0.1, 'sine', 0.1); setTimeout(() => playOscillator(880, 0.3, 'sine', 0.1), 100); }
+    function playBadSound() { playOscillator(150, 0.2, 'sawtooth', 0.1); setTimeout(() => playOscillator(100, 0.3, 'sawtooth', 0.1), 200); }
+    function playClickSound() { playOscillator(1046.50, 0.08, 'square', 0.05); } 
+    function playIntermissionSound() {
+        let time = 0;
+        for(let i=0; i<8; i++){
+            setTimeout(() => playOscillator(400, 0.05, 'square', 0.05), time);
+            setTimeout(() => playOscillator(500, 0.05, 'square', 0.05), time + 150);
+            time += 300;
+        }
+    }
+    function playFanfare() {
+        playOscillator(523.25, 0.15, 'square', 0.1);
+        setTimeout(() => playOscillator(659.25, 0.15, 'square', 0.1), 150);
+        setTimeout(() => playOscillator(783.99, 0.15, 'square', 0.1), 300);
+        setTimeout(() => playOscillator(1046.50, 0.6, 'square', 0.1), 450);
+    }
+
+    function showScreen(screenId) {
+        initAudio();
+        const screens = document.querySelectorAll('.screen');
+        screens.forEach(s => {
+            s.classList.remove('active-screen');
+            s.style.display = 'none'; 
+        });
+
+        const target = document.getElementById(screenId);
+        if(target) {
+            target.style.display = 'flex';
+            setTimeout(() => target.classList.add('active-screen'), 10);
+        }
+
+        if(screenId === 'menu-screen') {
+            initMenu();
+        }
+    }
+
+    function initMenu() {
+        if(typeof quizData === 'undefined') {
+            document.getElementById('menu-area').innerHTML = '<p style="color:red; font-weight:bold;">問題データ（questions.js）が読み込めてないでちゅ！</p>';
+            return;
+        }
+        
+        const menuArea = document.getElementById('menu-area');
+        menuArea.innerHTML = ''; 
+
+        for (const key in quizData) {
+            const section = quizData[key];
+            const btn = document.createElement('button');
+            btn.className = 'menu-btn';
+            btn.innerText = section.title;
+
+            const isCleared = localStorage.getItem(`kusohamu_政経_${key}`) === 'true';
+            if (isCleared) {
+                btn.classList.add('cleared'); 
+                const sectionNum = key.replace('section', '');
+                const markImg = document.createElement('img');
+                markImg.src = `images/marks/mark${sectionNum}.png`;
+                markImg.className = 'clear-mark-img';
+                btn.appendChild(markImg);
+            }
+
+            btn.onclick = function() {
+                playClickSound(); 
+                startSection(key);
+            };
+            menuArea.appendChild(btn);
+        }
+    }
+
+    function startSection(sectionKey) {
+        currentSectionKey = sectionKey;
+        const section = quizData[sectionKey];
+        if (!section || !section.questions || section.questions.length < 10) {
+            alert("エラー：問題データが足りないか、10問ないセクションでちゅ！"); return;
+        }
+
+        currentQuestions = shuffle([...section.questions]);
+        currentQIndex = 0;
+        score = 0;
+        wrongAnswerCount = 0; 
+
+        showScreen('quiz-screen');
+        showQuestion();
+    }
+
+    let typeWriterTimer;
+    function showDialogue(text) {
+        const bubble = document.getElementById("char-voice");
+        bubble.textContent = ""; 
+        if (typeWriterTimer) clearTimeout(typeWriterTimer);
+        let i = 0;
+        function typeChar() {
+            if (i < text.length) {
+                bubble.textContent += text.charAt(i);
+                playTypeSound(); 
+                i++;
+                typeWriterTimer = setTimeout(typeChar, 40); 
+            }
+        }
+        typeChar();
+    }
+
+    const praises = ["天才でちゅ！", "クソえらいでちゅ！", "ごはーーん！！でちゅ！", "やるでちゅね！", "ひまわりの種献上でちゅ！"];
+    const preQuestions = ["いくでちゅ！", "次でちゅ！", "わかるでちゅか？", "ごはん、ごはんでちゅ！"];
+    const bad_replies = [
+        "うきー！ちがうでちゅ！",
+        "やばいでちゅ！間違えたでちゅ！",
+        "ちーがーうーでーちゅーーー！！！",
+        "……ごはんが、遠のくでちゅ……"
+    ];
+
+    function showQuestion() {
+        if (currentQIndex >= currentQuestions.length) {
+            showIntermission();
+            return;
+        }
+
+        const q = currentQuestions[currentQIndex];
+        const charImg = document.getElementById('char-img');
+        const optionsDiv = document.getElementById("options");
+
+        charImg.classList.remove("correct-anim", "wrong-anim");
+        optionsDiv.innerHTML = ""; 
+
+        hasMissedCurrent = false;
+
+        currentNormalImgNum = Math.floor(Math.random() * 50) + 1; 
+        charImg.src = `images/normal/normal${currentNormalImgNum}.png`;
+
+        const prePhrase = (currentQIndex === 0) ? "政経特訓スタートでちゅ！" : preQuestions[Math.floor(Math.random() * preQuestions.length)];
+        showDialogue(prePhrase);
+
+        setTimeout(() => {
+            showDialogue(`Q${currentQIndex + 1}.\n${q.q}`);
+            
+            const correctStr = q.options[q.ans];
+            const shuffledOptions = shuffle([...q.options]);
+
+            shuffledOptions.forEach((opt) => {
+                const btn = document.createElement("button");
+                btn.className = "option-btn";
+                btn.innerText = opt;
+                btn.onclick = (e) => checkAnswer(opt, correctStr, e.target);
+                optionsDiv.appendChild(btn);
+            });
+        }, 1200); 
+    }
+
+    function checkAnswer(selectedStr, correctStr, clickedBtn) {
+        const charImg = document.getElementById('char-img');
+        const buttons = document.querySelectorAll("#quiz-screen button.option-btn");
+
+        buttons.forEach(btn => btn.disabled = true);
+
+        if (selectedStr === correctStr) {
+            playGoodSound(); 
+            
+            if (!hasMissedCurrent) {
+                score++; 
+            }
+            
+            clickedBtn.style.backgroundColor = "#ffb142"; 
+            clickedBtn.style.borderColor = "#d35400";
+            clickedBtn.style.color = "#fff";
+
+            charImg.src = `images/good.png`;
+            charImg.classList.add("correct-anim");
+            
+            showDialogue(praises[Math.floor(Math.random() * praises.length)]);
+
+            currentQIndex++;
+            setTimeout(showQuestion, 2000); 
+
+        } else {
+            playBadSound(); 
+            hasMissedCurrent = true;
+            
+            const badImageIndex = (wrongAnswerCount % 4) + 1; 
+            wrongAnswerCount++;
+
+            clickedBtn.style.backgroundColor = "#e0e0e0"; 
+            clickedBtn.style.borderColor = "#999";
+            clickedBtn.dataset.clicked = "true";
+
+            charImg.src = `images/bad/bad${badImageIndex}.png`;
+            charImg.classList.add("wrong-anim");
+            
+            showDialogue(bad_replies[(badImageIndex - 1)]);
+
+            setTimeout(() => {
+                charImg.src = `images/normal/normal${currentNormalImgNum}.png`;
+                charImg.classList.remove("wrong-anim");
+                showDialogue(`Q${currentQIndex + 1}.\n${currentQuestions[currentQIndex].q}`);
+                
+                buttons.forEach(btn => {
+                    if (btn.dataset.clicked !== "true") {
+                        btn.disabled = false;
+                    }
+                });
+            }, 1500); 
+        }
+    }
+
+    function showIntermission() {
+        showScreen('intermission-screen');
+        playIntermissionSound(); 
+
+        setTimeout(() => {
+            showResult();
+        }, 4500);
+    }
+
+    function showResult() {
+        const targetRewardNum = currentSectionKey.replace("section", ""); 
+        const resultMsg = document.getElementById('result-message');
+        const rewardImg = document.getElementById('reward-img');
+
+        resultMsg.innerText = `10問中、${score}問 1発正解でちゅ！`;
+
+        if(score === 10) {
+            playFanfare(); 
+            rewardImg.src = `images/rewards/reward${targetRewardNum}.png`;
+            resultMsg.innerText += "\nパーフェクト！ご褒美画像をあげるでちゅ！";
+            localStorage.setItem(`kusohamu_政経_${currentSectionKey}`, 'true');
+        } else {
+            rewardImg.src = `images/title.png`;
+            resultMsg.innerText += "\n全問1発正解したら、ご褒美画像が見れるでちゅ！\nやり直すでちゅ！";
+        }
+
+        showScreen('result-screen');
+    }
+
+    function backToMenu() {
+        showScreen('menu-screen');
+    }
+
+    function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+</script>
+
+</body>
+</html>
